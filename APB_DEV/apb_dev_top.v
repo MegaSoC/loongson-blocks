@@ -87,8 +87,7 @@ uart0_dsr_i,
 uart0_dcd_i,
 uart0_ri_i,
 
-uart0_int,
-
+uart0_int
 );
 
 parameter ADDR_APB = 20,
