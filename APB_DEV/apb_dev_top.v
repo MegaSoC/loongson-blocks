@@ -211,11 +211,11 @@ axi2apb_bridge AA_axi2apb_bridge_cpu
 .axi_s_rvalid       (axi_s_rvalid       ),
 .axi_s_rready       (axi_s_rready       ),
 
-.apb_word_trans     (0 ),
+.apb_word_trans     (1'b0     ),
 .apb_high_24b_rd    (24'b0    ),
-.apb_high_24b_wr    (    ),
-.apb_valid_cpu      (      ),
-.cpu_grant          (1         ),
+.apb_high_24b_wr    (         ),
+.apb_valid_cpu      (         ),
+.cpu_grant          (1'b1     ),
 
 .apb_clk            (apb_clk_cpu        ),
 .apb_reset_n        (apb_reset_n_cpu    ),
@@ -225,7 +225,7 @@ axi2apb_bridge AA_axi2apb_bridge_cpu
 .reg_addr           (apb_addr_cpu       ),
 .reg_datai          (apb_datai_cpu      ),
 .reg_datao          (apb_datao_cpu      ),
-.reg_ready_1        (1      )
+.reg_ready_1        (1'b1     )
 );
 
 
