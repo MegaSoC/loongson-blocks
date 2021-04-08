@@ -87,7 +87,12 @@ uart0_dsr_i,
 uart0_dcd_i,
 uart0_ri_i,
 
-uart0_int
+uart0_int,
+cdbus_int,
+
+cdbus_tx,
+cdbus_rx,
+cdbus_tx_en
 );
 
 parameter ADDR_APB = 20,
@@ -98,7 +103,7 @@ parameter ADDR_APB = 20,
           L_MASK = 16;
 
 input          clk;
-input                  rst_n;
+input          rst_n;
 
 input  [`LID         -1 :0] axi_s_awid;
 input  [`Lawaddr     -1 :0] axi_s_awaddr;
@@ -149,110 +154,152 @@ input               uart0_dcd_i;
 input               uart0_ri_i;
 
 output uart0_int;
+output cdbus_int;
 
-wire                    apb_ready_cpu;
+output cdbus_tx;
+input  cdbus_rx;
+output cdbus_tx_en;
+
 wire                    apb_rw_cpu;
 wire                    apb_psel_cpu;
 wire                    apb_enab_cpu;
 wire [ADDR_APB-1 :0]    apb_addr_cpu;
 wire [DATA_APB-1:0]     apb_datai_cpu;
 wire [DATA_APB-1:0]     apb_datao_cpu;
-wire                    apb_clk_cpu;
-wire                    apb_reset_n_cpu; 
-wire                    apb_word_trans_cpu;
-wire                    apb_valid_cpu;
-wire                apb_uart0_req;
-wire                apb_uart0_ack;
-wire                apb_uart0_rw;
-wire                apb_uart0_enab;
-wire                apb_uart0_psel;
-wire  [ADDR_APB -1:0] apb_uart0_addr;
-wire  [DATA_APB -1:0] apb_uart0_datai;
-wire  [DATA_APB -1:0] apb_uart0_datao;
+wire [DATA_APB-1:0]     apb_datao_cpu;
 
+wire                    apb_rw_uart;
+wire                    apb_psel_uart;
+wire                    apb_enab_uart;
+wire [ADDR_APB-1 :0]    apb_addr_uart;
+wire [DATA_APB-1:0]     apb_datai_uart;
+wire [DATA_APB-1:0]     apb_datao_uart;
 
-axi2apb_bridge AA_axi2apb_bridge_cpu 
-(
-.clk                (clk                ),
-.rst_n              (rst_n              ),
-.axi_s_awid         (axi_s_awid         ),
-.axi_s_awaddr       (axi_s_awaddr       ),
-.axi_s_awlen        (axi_s_awlen        ),
-.axi_s_awsize       (axi_s_awsize       ),
-.axi_s_awburst      (axi_s_awburst      ),
-.axi_s_awlock       (axi_s_awlock       ),
-.axi_s_awcache      (axi_s_awcache      ),
-.axi_s_awprot       (axi_s_awprot       ),
-.axi_s_awvalid      (axi_s_awvalid      ),
-.axi_s_awready      (axi_s_awready      ),
-.axi_s_wdata        (axi_s_wdata        ),
-.axi_s_wstrb        (axi_s_wstrb        ),
-.axi_s_wlast        (axi_s_wlast        ),
-.axi_s_wvalid       (axi_s_wvalid       ),
-.axi_s_wready       (axi_s_wready       ),
-.axi_s_bid          (axi_s_bid          ),
-.axi_s_bresp        (axi_s_bresp        ),
-.axi_s_bvalid       (axi_s_bvalid       ),
-.axi_s_bready       (axi_s_bready       ),
-.axi_s_arid         (axi_s_arid         ),
-.axi_s_araddr       (axi_s_araddr       ),
-.axi_s_arlen        (axi_s_arlen        ),
-.axi_s_arsize       (axi_s_arsize       ),
-.axi_s_arburst      (axi_s_arburst      ),
-.axi_s_arlock       (axi_s_arlock       ),
-.axi_s_arcache      (axi_s_arcache      ),
-.axi_s_arprot       (axi_s_arprot       ),
-.axi_s_arvalid      (axi_s_arvalid      ),
-.axi_s_arready      (axi_s_arready      ),
-.axi_s_rid          (axi_s_rid          ),
-.axi_s_rdata        (axi_s_rdata        ),
-.axi_s_rresp        (axi_s_rresp        ),
-.axi_s_rlast        (axi_s_rlast        ),
-.axi_s_rvalid       (axi_s_rvalid       ),
-.axi_s_rready       (axi_s_rready       ),
+wire                    apb_rw_cdbus;
+wire                    apb_psel_cdbus;
+wire                    apb_enab_cdbus;
+wire [ADDR_APB-1 :0]    apb_addr_cdbus;
+wire [DATA_APB-1:0]     apb_datai_cdbus;
+wire [DATA_APB-1:0]     apb_datao_cdbus;
 
-.apb_word_trans     (1'b0     ),
-.apb_high_24b_rd    (24'b0    ),
-.apb_high_24b_wr    (         ),
-.apb_valid_cpu      (         ),
-.cpu_grant          (1'b1     ),
-
-.apb_clk            (apb_clk_cpu        ),
-.apb_reset_n        (apb_reset_n_cpu    ),
-.reg_psel           (apb_psel_cpu       ),
-.reg_enable         (apb_enab_cpu       ),
-.reg_rw             (apb_rw_cpu         ),
-.reg_addr           (apb_addr_cpu       ),
-.reg_datai          (apb_datai_cpu      ),
-.reg_datao          (apb_datao_cpu      ),
-.reg_ready_1        (1'b1     )
+axi2apb_bridge AA_axi2apb_bridge_cpu (
+    .clk                (clk                ),
+    .rst_n              (rst_n              ),
+    .axi_s_awid         (axi_s_awid         ),
+    .axi_s_awaddr       (axi_s_awaddr       ),
+    .axi_s_awlen        (axi_s_awlen        ),
+    .axi_s_awsize       (axi_s_awsize       ),
+    .axi_s_awburst      (axi_s_awburst      ),
+    .axi_s_awlock       (axi_s_awlock       ),
+    .axi_s_awcache      (axi_s_awcache      ),
+    .axi_s_awprot       (axi_s_awprot       ),
+    .axi_s_awvalid      (axi_s_awvalid      ),
+    .axi_s_awready      (axi_s_awready      ),
+    .axi_s_wdata        (axi_s_wdata        ),
+    .axi_s_wstrb        (axi_s_wstrb        ),
+    .axi_s_wlast        (axi_s_wlast        ),
+    .axi_s_wvalid       (axi_s_wvalid       ),
+    .axi_s_wready       (axi_s_wready       ),
+    .axi_s_bid          (axi_s_bid          ),
+    .axi_s_bresp        (axi_s_bresp        ),
+    .axi_s_bvalid       (axi_s_bvalid       ),
+    .axi_s_bready       (axi_s_bready       ),
+    .axi_s_arid         (axi_s_arid         ),
+    .axi_s_araddr       (axi_s_araddr       ),
+    .axi_s_arlen        (axi_s_arlen        ),
+    .axi_s_arsize       (axi_s_arsize       ),
+    .axi_s_arburst      (axi_s_arburst      ),
+    .axi_s_arlock       (axi_s_arlock       ),
+    .axi_s_arcache      (axi_s_arcache      ),
+    .axi_s_arprot       (axi_s_arprot       ),
+    .axi_s_arvalid      (axi_s_arvalid      ),
+    .axi_s_arready      (axi_s_arready      ),
+    .axi_s_rid          (axi_s_rid          ),
+    .axi_s_rdata        (axi_s_rdata        ),
+    .axi_s_rresp        (axi_s_rresp        ),
+    .axi_s_rlast        (axi_s_rlast        ),
+    .axi_s_rvalid       (axi_s_rvalid       ),
+    .axi_s_rready       (axi_s_rready       ),
+    
+    .apb_word_trans     (1'b0     ),
+    .apb_high_24b_rd    (24'b0    ),
+    .cpu_grant          (1'b1     ),
+    
+    .reg_psel           (apb_psel_cpu       ),
+    .reg_enable         (apb_enab_cpu       ),
+    .reg_rw             (apb_rw_cpu         ),
+    .reg_addr           (apb_addr_cpu       ),
+    .reg_datai          (apb_datai_cpu      ),
+    .reg_datao          (apb_datao_cpu      ),
+    .reg_ready_1        (1'b1               )
 );
 
+apb_mux2 mux (
+    .apb_rw_cpu(apb_rw_cpu),
+    .apb_psel_cpu(apb_psel_cpu),
+    .apb_enab_cpu(apb_enab_cpu),
+    .apb_addr_cpu(apb_addr_cpu),
+    .apb_datai_cpu(apb_datai_cpu),
+    .apb_datao_cpu(apb_datao_cpu),
 
-UART_TOP uart0
-(
-.PCLK              (clk              ),
-.clk_carrier       (1'b0             ),
-.PRST_             (rst_n            ),
-.PSEL              (apb_psel_cpu   ),
-.PENABLE           (apb_enab_cpu   ),
-.PADDR             (apb_addr_cpu[7:0] ),
-.PWRITE            (apb_rw_cpu     ),
-.PWDATA            (apb_datai_cpu  ),
-.URT_PRDATA        (apb_datao_cpu  ),
-.INT               (uart0_int         ),
-.TXD_o             (uart0_txd_o       ),
-.TXD_i             (uart0_txd_i       ),
-.TXD_oe            (uart0_txd_oe      ),
-.RXD_o             (uart0_rxd_o       ),
-.RXD_i             (uart0_rxd_i       ),
-.RXD_oe            (uart0_rxd_oe      ),
-.RTS               (uart0_rts_o       ),
-.CTS               (uart0_cts_i       ),
-.DSR               (uart0_dsr_i       ),
-.DCD               (uart0_dcd_i       ),
-.DTR               (uart0_dtr_o       ),
-.RI                (uart0_ri_i        )
+    .apb0_rw(apb_rw_uart),
+    .apb0_psel(apb_psel_uart),
+    .apb0_enab(apb_enab_uart),
+    .apb0_addr(apb_addr_uart),
+    .apb0_datai(apb_datai_uart),
+    .apb0_datao(apb_datao_uart),
+
+    .apb1_rw(apb_rw_cdbus),
+    .apb1_psel(apb_psel_cdbus),
+    .apb1_enab(apb_enab_cdbus),
+    .apb1_addr(apb_addr_cdbus),
+    .apb1_datai(apb_datai_cdbus),
+    .apb1_datao(apb_datao_cdbus)
+);
+
+UART_TOP uart0 (
+    .PCLK              (clk               ),
+    .clk_carrier       (1'b0              ),
+    .PRST_             (rst_n             ),
+    .PSEL              (apb_psel_uart     ),
+    .PENABLE           (apb_enab_uart     ),
+    .PADDR             (apb_addr_uart[7:0]),
+    .PWRITE            (apb_rw_uart       ),
+    .PWDATA            (apb_datai_uart    ),
+    .URT_PRDATA        (apb_datao_uart    ),
+    .INT               (uart0_int         ),
+    .TXD_o             (uart0_txd_o       ),
+    .TXD_i             (uart0_txd_i       ),
+    .TXD_oe            (uart0_txd_oe      ),
+    .RXD_o             (uart0_rxd_o       ),
+    .RXD_i             (uart0_rxd_i       ),
+    .RXD_oe            (uart0_rxd_oe      ),
+    .RTS               (uart0_rts_o       ),
+    .CTS               (uart0_cts_i       ),
+    .DSR               (uart0_dsr_i       ),
+    .DCD               (uart0_dcd_i       ),
+    .DTR               (uart0_dtr_o       ),
+    .RI                (uart0_ri_i        )
+);
+    
+cdbus #(
+    .DIV_LS(868),
+    .DIV_HS(868)
+) cdbus_ctrl (
+    .clk(clk),
+    .reset_n(rst_n),
+    .chip_select(apb_psel_cdbus),
+    .irq(cdbus_int),
+    
+    .csr_address   (apb_addr_cdbus[4:0]                               ),
+    .csr_read      (apb_psel_cdbus && apb_enab_cdbus && !apb_rw_cdbus ),
+    .csr_readdata  (apb_datao_cdbus                                   ),
+    .csr_write     (apb_psel_cdbus && apb_enab_cdbus && apb_rw_cdbus  ),
+    .csr_writedata (apb_datai_cdbus                                   ),
+    
+    .tx    (cdbus_tx   ),
+    .rx    (cdbus_rx   ),
+    .tx_en (cdbus_tx_en)
 );
 
 endmodule
