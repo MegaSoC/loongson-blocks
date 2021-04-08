@@ -166,7 +166,6 @@ wire                    apb_enab_cpu;
 wire [ADDR_APB-1 :0]    apb_addr_cpu;
 wire [DATA_APB-1:0]     apb_datai_cpu;
 wire [DATA_APB-1:0]     apb_datao_cpu;
-wire [DATA_APB-1:0]     apb_datao_cpu;
 
 wire                    apb_rw_uart;
 wire                    apb_psel_uart;
