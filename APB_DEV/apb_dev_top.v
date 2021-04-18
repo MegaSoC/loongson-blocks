@@ -33,8 +33,9 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 `include "config.vh"
 
-module axi2apb_misc
-(
+module axi2apb_misc #(
+           parameter C_ASIC_SRAM = 0
+)  (
 clk,
 rst_n,
 
@@ -283,7 +284,8 @@ UART_TOP uart0 (
     
 cdbus #(
     .DIV_LS(868),
-    .DIV_HS(868)
+    .DIV_HS(868),
+    .C_ASIC_SRAM(C_ASIC_SRAM)
 ) cdbus_ctrl (
     .clk(clk),
     .reset_n(rst_n),
