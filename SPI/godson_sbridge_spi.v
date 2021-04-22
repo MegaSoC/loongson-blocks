@@ -88,7 +88,9 @@ module spi_flash_ctrl(
     input           sdi_i,
     output          sdi_o,
     output          sdi_en,
-    output          inta_o
+    output          inta_o,
+
+    input  [3:0]    default_div
 );
 
    wire             areset = ~aresetn;
@@ -484,7 +486,8 @@ module spi_flash_ctrl(
                              .param  (param         ),
                              .param2 (param2        ),
                              .softcs (softcs        ),
-                             .busy   (spibus_busy   )
+                             .busy   (spibus_busy   ),
+                             .default_div(default_div)
                              );
    assign     ss_miso = sdi_i;
 
@@ -541,7 +544,9 @@ module simple_spi_top(
   output reg  [7:0] param,
   output reg  [7:0] param2,
   output reg  [7:0] softcs,
-  output reg        busy
+  output reg        busy,
+
+  input  [3:0]    default_div
 );
 
   reg  [7:0] spcr;       
@@ -566,15 +571,10 @@ module simple_spi_top(
   always @(posedge clk_i)
     if (~rst_i)
       begin
-          spcr <= 8'h12;  
-          sper <= 8'h00;
-          `ifdef FAST_SIMU
-          param<= 8'h41;  
-          param2<=8'h07;  
-          `else
-          param<= 8'h41;   
+          spcr <= {6'h4, default_div[1:0]};
+          sper <= {6'h0, default_div[3:2]};
+          param<= {default_div, 4'h1};
           param2<=8'h03;  
-          `endif
           softcs<=8'hf0;  
       end
     else if (wb_wr)
