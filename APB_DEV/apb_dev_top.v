@@ -90,10 +90,18 @@ uart0_ri_i,
 
 uart0_int,
 cdbus_int,
+i2c_int,
 
 cdbus_tx,
 cdbus_rx,
-cdbus_tx_en
+cdbus_tx_en,
+
+i2cm_scl_i,
+i2cm_scl_o,
+i2cm_scl_t, 
+i2cm_sda_i, 
+i2cm_sda_o, 
+i2cm_sda_t
 );
 
 parameter ADDR_APB = 20,
@@ -156,10 +164,19 @@ input               uart0_ri_i;
 
 output uart0_int;
 output cdbus_int;
+output i2c_int;
 
 output cdbus_tx;
 input  cdbus_rx;
 output cdbus_tx_en;
+
+input  i2cm_scl_i;       // SCL-line input
+output i2cm_scl_o;       // SCL-line output (always 1'b0)
+output i2cm_scl_t;       // SCL-line output enable (active low)
+
+input  i2cm_sda_i;       // SDA-line input
+output i2cm_sda_o;       // SDA-line output (always 1'b0)
+output i2cm_sda_t;       // SDA-line output enable (active low)
 
 wire                    apb_rw_cpu;
 wire                    apb_psel_cpu;
@@ -181,6 +198,13 @@ wire                    apb_enab_cdbus;
 wire [ADDR_APB-1 :0]    apb_addr_cdbus;
 wire [DATA_APB-1:0]     apb_datai_cdbus;
 wire [DATA_APB-1:0]     apb_datao_cdbus;
+
+wire                    apb_rw_i2c;
+wire                    apb_psel_i2c;
+wire                    apb_enab_i2c;
+wire [ADDR_APB-1 :0]    apb_addr_i2c;
+wire [DATA_APB-1:0]     apb_datai_i2c;
+wire [DATA_APB-1:0]     apb_datao_i2c;
 
 axi2apb_bridge AA_axi2apb_bridge_cpu (
     .clk                (clk                ),
@@ -254,7 +278,14 @@ apb_mux2 mux (
     .apb1_enab(apb_enab_cdbus),
     .apb1_addr(apb_addr_cdbus),
     .apb1_datai(apb_datai_cdbus),
-    .apb1_datao(apb_datao_cdbus)
+    .apb1_datao(apb_datao_cdbus),
+
+    .apb2_rw(apb_rw_i2c),
+    .apb2_psel(apb_psel_i2c),
+    .apb2_enab(apb_enab_i2c),
+    .apb2_addr(apb_addr_i2c),
+    .apb2_datai(apb_datai_i2c),
+    .apb2_datao(apb_datao_i2c)
 );
 
 UART_TOP uart0 (
@@ -303,6 +334,23 @@ cdbus #(
     .tx_en (cdbus_tx_en)
 );
 
+i2c_master_top i2c_ctrl(
+    .clk(clk),
+    .rst(~rst_n),
+    .irq(i2c_int),
+
+    .csr_address   (apb_addr_i2c[2:0]                           ),
+    .csr_read      (apb_psel_i2c && apb_enab_i2c && !apb_rw_i2c ),
+    .csr_readdata  (apb_datao_i2c                               ),
+    .csr_write     (apb_psel_i2c && apb_enab_i2c && apb_rw_i2c  ),
+    .csr_writedata (apb_datai_i2c                               ),
+
+    .scl_pad_i     (i2cm_scl_i),
+    .scl_pad_o     (i2cm_scl_o),
+    .scl_padoen_o  (i2cm_scl_t),
+    .sda_pad_i     (i2cm_sda_i),
+    .sda_pad_o     (i2cm_sda_o),
+    .sda_padoen_o  (i2cm_sda_t)
+);
+
 endmodule
-
-
