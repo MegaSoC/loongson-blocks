@@ -32,7 +32,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------------*/
 
 `define APB_DEV0  6'h10
-`define APB_DEV2  6'h18
+`define APB_DEV2  6'h14
 `define APB_DEV1  6'h1c
 module apb_mux2 (
     apb_ack_cpu,
