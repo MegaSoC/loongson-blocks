@@ -93,8 +93,10 @@ cdbus_int,
 i2c_int,
 
 cdbus_tx,
+cdbus_tx_t,
 cdbus_rx,
 cdbus_tx_en,
+cdbus_tx_en_t,
 
 i2cm_scl_i,
 i2cm_scl_o,
@@ -167,8 +169,10 @@ output cdbus_int;
 output i2c_int;
 
 output cdbus_tx;
+output cdbus_tx_t;
 input  cdbus_rx;
 output cdbus_tx_en;
+output cdbus_tx_en_t;
 
 input  i2cm_scl_i;       // SCL-line input
 output i2cm_scl_o;       // SCL-line output (always 1'b0)
@@ -329,9 +333,11 @@ cdbus #(
     .csr_write     (apb_psel_cdbus && apb_enab_cdbus && apb_rw_cdbus  ),
     .csr_writedata (apb_datai_cdbus                                   ),
     
-    .tx    (cdbus_tx   ),
-    .rx    (cdbus_rx   ),
-    .tx_en (cdbus_tx_en)
+    .tx      (cdbus_tx      ),
+    .tx_t    (cdbus_tx_t    ),
+    .rx      (cdbus_rx      ),
+    .tx_en   (cdbus_tx_en   ),
+    .tx_en_t (cdbus_tx_en_t )
 );
 
 i2c_master_top i2c_ctrl(
