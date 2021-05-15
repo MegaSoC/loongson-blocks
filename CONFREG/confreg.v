@@ -50,7 +50,7 @@ module confreg(
     input  [3 :0] s_wstrb,
     input         s_wlast,
     input         s_wvalid,
-    output        s_wready,
+    output reg    s_wready,
     output [3 :0] s_bid,
     output [1 :0] s_bresp,
     output        s_bvalid,
@@ -83,7 +83,6 @@ module confreg(
 reg  [31:0] timer;
 
 reg busy,write,R_or_W;
-reg s_wready;
 
 wire ar_enter = s_arvalid & s_arready;
 wire r_retire = s_rvalid & s_rready & s_rlast;
@@ -91,8 +90,8 @@ wire aw_enter = s_awvalid & s_awready;
 wire w_enter  = s_wvalid & s_wready & s_wlast;
 wire b_retire = s_bvalid & s_bready;
 
-wire s_arready = ~busy & (!R_or_W| !s_awvalid);
-wire s_awready = ~busy & ( R_or_W| !s_arvalid);
+assign s_arready = ~busy & (!R_or_W| !s_awvalid);
+assign s_awready = ~busy & ( R_or_W| !s_arvalid);
 
 always@(posedge aclk)
     if(~aresetn) busy <= 1'b0;
